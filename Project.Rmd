@@ -1,0 +1,108 @@
+---
+title: "Investigating exponential distribution in R"
+author: "Olusegun"
+date: "6/15/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+```
+
+## 1.Overview
+In this project we will investigate the exponential distribution in R and compare it with the Central Limit Theorem. The exponential distribution can be simulated in R with ```rexp(n, lambda)``` where lambda is the rate parameter. 
+
+## 2.Simulations
+The mean of exponential distribution is 1/lambda and the standard deviation is also 1/lambda. We set lambda = 0.2 for all of the simulations. We will investigate the distribution of averages of 40 exponentials. Note that number of simulations = 1000.
+
+```{r}
+sim <- 1000
+n <- 40
+lambda <- 0.2
+sim_data <- matrix(rexp(n*sim,lambda), sim, n)
+```
+
+We will illustrate the properties of the distribution of the mean of 40 exponentials by showing:
+
+- The sample mean and comparing it to the theoretical mean of the distribution.
+- How variable the sample is (via variance) and comparing it to the theoretical variance of the distribution
+- That the distribution is approximately normal.
+
+## 3.Sample Mean versus Theoretical Mean
+Showing the sample mean and comparing it to the theoretical mean of the distribution.
+
+```{r}
+sample_mean <- apply(sim_data, 1, mean)
+sim_mean <- mean(sample_mean) 
+theoretical_mean <- 1/lambda
+
+  result1 <-data.frame("Mean"=c(sim_mean,theoretical_mean), 
+                       row.names = c("Sample Mean","Theoretical mean"))
+  result1
+```
+The simulation mean of `r sim_mean` is close to the theoretical value of `r theoretical_mean`. 
+
+```{r}
+library(ggplot2)
+    g = ggplot(data.frame(sample_mean=sample_mean), aes(x = sample_mean))
+    g = g + geom_histogram(color = "black", fill = "grey", binwidth = 0.3)
+    g = g + geom_vline(aes(xintercept = theoretical_mean,
+                           colour="theoretical_mean"))
+    g = g + geom_vline(aes(xintercept = sim_mean,colour="simulated_mean"))
+    g = g +  scale_color_manual(name = "Distribution", 
+                                values = c(theoretical_mean = "blue", 
+                                           simulated_mean = "red"))
+    g = g +ggtitle ("Fig 1. Showing histogram of the sample means ")+xlab("Sample mean")+ylab("Density")
+    g
+```
+
+*The figure above shows the histogram of the sample means. It also shows where the distribution is centered at and also, the theoretical center of the distribution.*
+
+## 4.Sample Variance versus Theoretical Variance
+Showing how variable the sample is (via variance) and comparing it to the theoretical variance of the distribution.
+
+```{r}
+sample_variance <- (apply(sim_data, 1, sd))^2
+sim_variance <- mean(sample_variance)
+theoretical_variance <- (1/lambda)^2
+
+  result2 <-data.frame("Variance"=c(sim_variance,theoretical_variance), 
+                       row.names = c("Sample Variance","Theoretical Variance"))
+  result2
+
+    g = ggplot(data.frame(sample_variance=sample_variance), aes(x = sample_variance))
+    g = g + geom_histogram(color = "black", fill = "grey", binwidth = 2)
+    g = g + geom_vline(aes(xintercept = theoretical_variance,colour="theoretical_variance"))
+    g = g + geom_vline(aes(xintercept = sim_variance,colour="simulated_variance"))
+    g = g +  scale_color_manual(name = "Variance", 
+                                values = c(theoretical_variance = "blue", 
+                                           simulated_variance = "red"))
+    g = g +ggtitle ("Fig 2. Showing histogram of the sample variance")+xlab("Sample variance")+ylab("Density")
+    g
+```
+
+*The simulation variance of `r sim_variance` is close to the theoretical value of `r theoretical_variance`.*
+
+## 5.Distribution
+Showing that the distribution is approximately normal.
+
+According to the central limit theorem (CLT), the averages of samples follow normal distribution.
+
+```{r}
+h <- hist(sample_mean, breaks = 20, density = 10,
+          col = "lightgray", xlab = "Sample Mean", main = "Fig 3. Showing the normal distribution plot") 
+xfit <- seq(min(sample_mean), max(sample_mean), length = 40) 
+yfit <- dnorm(xfit, mean = mean(sample_mean), sd = sd(sample_mean)) 
+yfit <- yfit * diff(h$mids[1:2]) * length(sample_mean) 
+
+lines(xfit, yfit, col = "black", lwd = 2)
+```
+
+*The plot above shows that the distribution of the sample means almost matches the normal distribution.*
+
+```{r}
+qqnorm(sample_mean, main ="Fig 4. Showing Normal probability plot")
+qqline(sample_mean,col = "3")
+```
+
+*In the plot above we create a Normal Probability Plot of Residuals to confirm the fact that the distribution of sample means matches the theoretical normal distribution.*
